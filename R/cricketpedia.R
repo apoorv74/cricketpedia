@@ -1,0 +1,86 @@
+library_list <- c('miniUI','shiny','rvest','dplyr','stringr')
+lapply(library_list,require,character.only=T)
+
+get_stats <- function(player_name){
+player_name <- str_replace_all(player_name,' ','%20+')
+url_1 <- 'http://search.espncricinfo.com/ci/content/site/search.html?search=+'
+url_2 <- ';type=player'
+url_fixed <- 'http://www.espncricinfo.com'
+# player_name <- readline('Enter Player Name: ')
+xpath <- '//*[@id="viewport"]/div[5]/div[2]/main/div/div[4]/ul/li[2]/h3/a'
+css_path_player_url <- 'div.results.in-players h3 a'
+css_path_player_info_1 <- 'div.results.in-players p'
+css_path_player_info_2 <- '.name.link-cta'
+url <- paste0(url_1,player_name,url_2)
+
+player_info_1 <- url %>% read_html() %>% html_nodes(css = css_path_player_info_1) %>% html_text()
+player_info_2 <- url %>% read_html() %>% html_nodes(css = css_path_player_info_2) %>% html_text()
+player_urls <- url %>% read_html() %>% html_nodes(css = css_path_player_url) %>% html_attr('href')
+player_df <- data.frame(player_info_1,player_info_2,player_urls)
+player_df[] <- lapply(player_df,as.character)
+player_id <- data.frame(str_locate(player_df$player_urls,'player/'))
+player_df <- cbind(player_df,player_id)
+player_df$player_id <- substr(player_df$player_urls,player_df$end + 1,str_length(player_df$player_urls)-5)
+print(player_df)
+input_player <- readline('Enter player Number: ')
+player_id <- player_df$player_id[as.numeric(input_player)]
+
+stats_url_1 <- 'http://stats.espncricinfo.com/ci/engine/player/'
+stats_url_2 <- '.html?class='
+stats_url_3 <- ';template=results;'
+stats_url_4 <- 'type='
+stats_url_5 <- ';view='
+
+batting_stats <- c('innings','match',
+"cumulative"        ,
+"reverse_cumulative",
+"series"            ,
+"tour"              ,
+"ground"            ,
+"fow_summary"       ,
+"fow_list"          ,
+"dismissal_summary" ,
+"bowler_summary"    ,
+"fielder_summary"   ,
+"dismissal_list")
+batting_stats <- data.frame(batting_stats,'id' = seq(1:length(batting_stats)),stringsAsFactors = F)
+bowling_stats <- c("innings",                 
+                   "match"          ,
+                   "cumulative"        ,
+                   "reverse_cumulative",
+                   "series"            ,
+                   "tour"              ,
+                   "ground"            ,
+                   "dismissal_summary" ,
+                   "batsman_summary"   ,
+                   "fielder_summary"   ,
+                   "dismissal_list")
+bowling_stats <- data.frame(bowling_stats,'id' = seq(1:length(bowling_stats)),stringsAsFactors = F)
+
+match_type <- readline('(Test: 1 - ODI: 2): ')
+player_skill <- readline('(Batting: 1 - Bowling: 2): ')
+player_skill <- ifelse(player_skill == "1",'batting',ifelse(player_skill == "2",'bowling','batting'))
+print("\n")
+print("########### Stats ###########")
+print("\n")
+if(player_skill == "batting"){
+  print(batting_stats)
+  print("\n")
+}
+else{
+  print(bowling_stats)
+  print("\n")
+}
+
+stats_type <- readline('Enter stats id to get data: ')
+stats_type <- ifelse(player_skill == 'batting',
+                     batting_stats$batting_stats[batting_stats$id == as.numeric(stats_type)],
+                     bowling_stats$bowling_stats[bowling_stats$id == as.numeric(stats_type)])
+
+data_url <- paste0(stats_url_1,player_id,stats_url_2,
+                   match_type,stats_url_3,stats_url_4,player_skill,stats_url_5,stats_type)
+stats_xpath <- '//*[@id="ciHomeContentlhs"]/div[3]/table[4]'
+player_stats <- data_url %>% read_html() %>% html_nodes(xpath = stats_xpath) %>% html_table()
+player_stats <- data.frame(player_stats)
+print(player_stats)
+}

@@ -1,0 +1,4 @@
+Name: Player Info
+Description: Get ODI and Test stats for any player.
+Binding: get_stats
+Interactive: false
