@@ -1,8 +1,8 @@
-library_list <- c('miniUI','shiny','rvest','dplyr','stringr')
-lapply(library_list,require,character.only=T)
+# library_list <- c('miniUI','shiny','rvest','dplyr','stringr')
+# lapply(library_list,require,character.only=T)
 
 get_stats <- function(player_name){
-player_name <- str_replace_all(player_name,' ','%20+')
+player_name <- stringr::str_replace_all(player_name,' ','%20+')
 url_1 <- 'http://search.espncricinfo.com/ci/content/site/search.html?search=+'
 url_2 <- ';type=player'
 url_fixed <- 'http://www.espncricinfo.com'
@@ -13,14 +13,14 @@ css_path_player_info_1 <- 'div.results.in-players p'
 css_path_player_info_2 <- '.name.link-cta'
 url <- paste0(url_1,player_name,url_2)
 
-player_info_1 <- url %>% read_html() %>% html_nodes(css = css_path_player_info_1) %>% html_text()
-player_info_2 <- url %>% read_html() %>% html_nodes(css = css_path_player_info_2) %>% html_text()
-player_urls <- url %>% read_html() %>% html_nodes(css = css_path_player_url) %>% html_attr('href')
+player_info_1 <- url %>% xml2::read_html() %>% rvest::html_nodes(css = css_path_player_info_1) %>% rvest::html_text()
+player_info_2 <- url %>% xml2::read_html() %>% rvest::html_nodes(css = css_path_player_info_2) %>% rvest::html_text()
+player_urls <- url %>% xml2::read_html() %>% rvest::html_nodes(css = css_path_player_url) %>% rvest::html_attr('href')
 player_df <- data.frame(player_info_1,player_info_2,player_urls)
 player_df[] <- lapply(player_df,as.character)
-player_id <- data.frame(str_locate(player_df$player_urls,'player/'))
+player_id <- data.frame(stringr::str_locate(player_df$player_urls,'player/'))
 player_df <- cbind(player_df,player_id)
-player_df$player_id <- substr(player_df$player_urls,player_df$end + 1,str_length(player_df$player_urls)-5)
+player_df$player_id <- substr(player_df$player_urls,player_df$end + 1,nchar(player_df$player_urls)-5)
 print(player_df)
 input_player <- readline('Enter player Number: ')
 player_id <- player_df$player_id[as.numeric(input_player)]
@@ -44,7 +44,7 @@ batting_stats <- c('innings','match',
 "fielder_summary"   ,
 "dismissal_list")
 batting_stats <- data.frame(batting_stats,'id' = seq(1:length(batting_stats)),stringsAsFactors = F)
-bowling_stats <- c("innings",                 
+bowling_stats <- c("innings",
                    "match"          ,
                    "cumulative"        ,
                    "reverse_cumulative",
@@ -80,7 +80,7 @@ stats_type <- ifelse(player_skill == 'batting',
 data_url <- paste0(stats_url_1,player_id,stats_url_2,
                    match_type,stats_url_3,stats_url_4,player_skill,stats_url_5,stats_type)
 stats_xpath <- '//*[@id="ciHomeContentlhs"]/div[3]/table[4]'
-player_stats <- data_url %>% read_html() %>% html_nodes(xpath = stats_xpath) %>% html_table()
+player_stats <- data_url %>% xml2::read_html() %>% rvest::html_nodes(xpath = stats_xpath) %>% rvest::html_table()
 player_stats <- data.frame(player_stats)
 print(player_stats)
 }
