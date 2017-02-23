@@ -8,7 +8,8 @@ Description: You can fetch both batting and bowling statistics.
 License: MIT
 Encoding: UTF-8
 LazyData: true
-Imports: rvest,
+Depends: R (>= 3.0.1), rvest
+Imports: selectr,
     xml2,
     stringr,
     dplyr
